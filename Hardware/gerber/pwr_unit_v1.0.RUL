@@ -1,0 +1,12 @@
+DRC Rules Export File for PCB: D:\GIT\PS_UNIT\PS_PWM_UNIT\Hardware\pcb\pwr_unit_v1.0.PcbDoc
+RuleKind=Clearance|RuleName=Clearance_Component_K5_K6|Scope=Board|Minimum=39.37
+RuleKind=Clearance|RuleName=Clearance_PC15_3.3|Scope=Board|Minimum=7.87
+RuleKind=Clearance|RuleName=Clearance_Trak_3.3|Scope=Board|Minimum=15.75
+RuleKind=Clearance|RuleName=Clearance_5V_12V|Scope=Board|Minimum=19.69
+RuleKind=Clearance|RuleName=Clearance_MCU|Scope=Board|Minimum=7.87
+RuleKind=Clearance|RuleName=Clearance_GND_HOT_COMPONENT|Scope=Board|Minimum=39.37
+RuleKind=Clearance|RuleName=Clearance_GND_HOT_ALL|Scope=Board|Minimum=78.74
+RuleKind=SolderMaskExpansion|RuleName=SolderMaskExpansion|Scope=Board|Minimum=4.00
+RuleKind=Width|RuleName=Width|Scope=Board|Minimum=10.00
+RuleKind=Clearance|RuleName=Clearance|Scope=Board|Minimum=10.00
+RuleKind=ShortCircuit|RuleName=ShortCircuit|Scope=Board|Allowed=0
