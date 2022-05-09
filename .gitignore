@@ -52,11 +52,12 @@ Mkfile.old
 dkms.conf
 
 #Altium temp & lib files
+Hardware/__Previews/
 Hardware/lib/
 Hardware/History/
 Hardware/eco/
 Hardware/sch/__Previews/
-
+Hardware/sch/History/
 
 
 
