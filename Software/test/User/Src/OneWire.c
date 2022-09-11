@@ -62,6 +62,9 @@ void usart_setup(uint32_t baud) {
 		__asm__("NOP");
 	}
 
+	HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(USART1_IRQn);
+
 	__HAL_UART_ENABLE_IT(&ow_uart, UART_IT_RXNE);
 }
 
@@ -384,11 +387,15 @@ void owRecallE2Cmd(OneWire *ow, RomCode *rom) {
 }
 
 
-int get_ROMid (void){
-	if (owResetCmd() != ONEWIRE_NOBODY) {    // is anybody on the bus?
-		devices = owSearchCmd(&ow);        // получить ROMid в�?ех у�?трой�?т на шине или вернуть код ошибки
-		if (devices <= 0) {
-			while (1){
+int8_t DS18B20_GetId (void)
+{
+	if (owResetCmd() != ONEWIRE_NOBODY)
+	{    // is anybody on the bus?
+		devices = owSearchCmd(&ow);        // get ROM id all devices on bus
+		if (devices <= 0)
+		{
+			while (1)
+			{
 				pDelay = 1000000;
 				for (i = 0; i < pDelay * 1; i++)    /* Wait a bit. */
 					__asm__("nop");
@@ -396,7 +403,8 @@ int get_ROMid (void){
 
 		}
 		i = 0;
-		for (; i < devices; i++) {//выводим в кон�?оль в�?е найденные ROM
+		for (; i < devices; i++)
+		{//debug information
 			RomCode *r = &ow.ids[i];
 			uint8_t crc = owCRC8(r);
 			crcOK = (crc == r->crc)?"CRC OK":"CRC ERROR!";
@@ -405,7 +413,8 @@ int get_ROMid (void){
 			sprintf(devInfo.info, "SN: %02X/%02X%02X%02X%02X%02X%02X/%02X", r->family, r->code[5], r->code[4], r->code[3],
 					r->code[2], r->code[1], r->code[0], r->crc);
 
-			if (crc != r->crc) {
+			if (crc != r->crc)
+			{
 				devInfo.device = i;
 				sprintf (devInfo.info,"\n can't read cause CNC error");
 			}
@@ -414,33 +423,62 @@ int get_ROMid (void){
 	}
 	pDelay = 1000000;
 	for (i = 0; i < pDelay * 1; i++)
+	{
 		__asm__("nop");
+	}
 
 	if (strcmp(crcOK,"CRC OK") == 0) return 0;
 	else return -1;
 }
 
-void get_Temperature (void)
+void DS18B20_GetTemperature(DS18B20_DATA *data)
 {
-	i=0;
-	for (; i < devices; i++) {
-		switch ((ow.ids[i]).family) {//че у нас за датчик
+	data->time_start = HAL_GetTick();
+
+	switch ((ow.ids[data->id]).family)
+	{
 		case DS18B20:
-			// будет возвращено значение предыдущего измерения!
-			t = readTemperature(&ow, &ow.ids[i], 1);
-			Temp[i] = (float)(t.inCelsus*10+t.frac)/10.0;
-			break;
+		{//returned previous measured value
+			t = readTemperature(&ow, &ow.ids[data->id], 1);
+			Temp[data->id] = (float) (t.inCelsus * 10 + t.frac) / 10.0;
+			data->temperature = t.inCelsus * 10 + t.frac;
+		}break;
+
 		case DS18S20:
-			t = readTemperature(&ow, &ow.ids[i], 1);
-			Temp[i] = (float)(t.inCelsus*10+t.frac)/10.0;
-			break;
+		{
+			t = readTemperature(&ow, &ow.ids[data->id], 1);
+			Temp[data->id] = (float) (t.inCelsus * 10 + t.frac) / 10.0;
+			data->temperature = t.inCelsus * 10 + t.frac;
+		}break;
+
 		case 0x00:
-			break;
+		{
+		}break;
+
 		default:
-			// error handler
-			break;
-		}
+		{
+		}break;
 	}
-//	pDelay = 4000000;
-//	for (i = 0; i < pDelay * 1; i++){}   /* Wait a bit. */
 }
+
+void DS18B20_Process(DS18B20_DATA *data)
+{
+	data->time_diff = HAL_GetTick();
+
+	if((data->time_diff - data->time_start) > DS18B20_MEASURE_DELAY)
+	{
+		DS18B20_GetTemperature(data);
+	}
+
+}
+
+//*************************************************************
+//insert IRQhandler for OW_USART
+void USART1_IRQHandler(void)
+{
+	owReadHandler();
+}
+
+//*************************************************************
+
+

@@ -26,6 +26,11 @@
 #define WIRE_1    	0xff
 #define OW_READ   	0xff
 
+#define DS18B20_MEASURE_DELAY 5000
+
+#define DS18B20_TRANSFORM_TEMP_ID	0x00
+#define DS18B20_TRASISTOR_TEMP_ID	0x01
+
 typedef struct {
   int8_t inCelsus;
   uint8_t frac;
@@ -74,6 +79,14 @@ typedef struct
 	char info[30];
 }DEVInfo;
 
+typedef struct
+{
+	uint32_t time_start;
+	uint32_t time_diff;
+	int16_t temperature;
+	uint8_t id;
+}DS18B20_DATA;
+
 
 void usart_setup_(uint32_t baud);
 
@@ -105,8 +118,10 @@ uint16_t owEchoRead(void);
 
 void owReadHandler(void);
 
-int get_ROMid (void);
 
-void get_Temperature (void);
+
+int8_t DS18B20_GetId (void);
+void DS18B20_GetTemperature(DS18B20_DATA *data);
+void DS18B20_Process(DS18B20_DATA *data);
 
 #endif //STM32_DS18X20_ONEWIRE_H

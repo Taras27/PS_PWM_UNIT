@@ -47,7 +47,12 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern float Temp[MAXDEVICES_ON_THE_BUS];
+
+DS18B20_DATA transfom_temperature = { .temperature = 0, .id = DS18B20_TRANSFORM_TEMP_ID };
+DS18B20_DATA transistor_temperature = { .temperature = 0, .id = DS18B20_TRASISTOR_TEMP_ID };
+
+uint32_t start, stop, diff;
+uint8_t output_state = 0;
 
 /* USER CODE END PV */
 
@@ -100,15 +105,40 @@ int main(void)
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
-  get_ROMid();
+  DS18B20_GetId();
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_7, GPIO_PIN_SET);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  get_Temperature();
-	  HAL_Delay(2000);
+
+	  start = HAL_GetTick();
+
+	  DS18B20_Process(&transfom_temperature);
+	  DS18B20_Process(&transistor_temperature);
+
+	  stop = HAL_GetTick();
+	  diff = stop - start;
+
+	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_11) == GPIO_PIN_SET)
+	  {
+		  output_state = 1;
+	  }
+
+	  else if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_12) == GPIO_PIN_SET)
+	  {
+		  output_state = 2;
+	  }
+	  else
+	  {
+		  output_state = 0;
+	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
