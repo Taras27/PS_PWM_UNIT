@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "dma.h"
 #include "i2c.h"
 #include "spi.h"
 #include "tim.h"
@@ -37,6 +38,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define COEFECIENT	0.0008056640625f
+#define OA_COEFICIENT	10.0f
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -47,6 +52,15 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+extern DMA_HandleTypeDef hdma_adc1;
+HAL_StatusTypeDef ADC_Status = HAL_ERROR;
+uint32_t ADC_Value[5] = { 0 };
+uint8_t ADC_CalibrationValue = 0;
+
+float VOLTAGE_Result = 0;
+
+
+HAL_StatusTypeDef OW_Status = HAL_ERROR;
 
 /* USER CODE END PV */
 
@@ -89,6 +103,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
   MX_I2C2_Init();
   MX_SPI1_Init();
@@ -100,8 +115,8 @@ int main(void)
   MX_TIM16_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start_IT(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim15, TIM_CHANNEL_2);
@@ -109,22 +124,29 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim16);
   HAL_TIM_Base_Start_IT(&htim17);
 
-  TIM3->CCR1 = 60;
+  TIM3->CCR1 = 90;
   TIM3->CCR2 = 60;
 
-  TIM15->CCR1 = 95;
-  TIM15->CCR2 = 40;
+  TIM15->CCR1 = 99;
+  TIM15->CCR2 = 90;
+
+  ADC_Status = HAL_ADCEx_Calibration_Start(&hadc1);
+  ADC_CalibrationValue = HAL_ADCEx_Calibration_GetValue(&hadc1);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+	while (1)
+	{
+		HAL_ADC_Start_DMA(&hadc1, ADC_Value, 5);
+		VOLTAGE_Result = (float) (COEFECIENT * (ADC_Value[0] - 10) * OA_COEFICIENT);
+		HAL_Delay(100);
 
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+	}
   /* USER CODE END 3 */
 }
 
@@ -169,7 +191,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_SYSCLK, RCC_MCODIV_16);
 }
 
 /* USER CODE BEGIN 4 */
@@ -192,6 +213,8 @@ void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
 		GPIOB->ODR ^= GPIO_PIN_13;
 	}
 }
+
+
 /* USER CODE END 4 */
 
 /**
